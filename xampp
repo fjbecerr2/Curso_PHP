@@ -1,0 +1,113 @@
+ABRIR GESTOR XAMPP (COMPLETO):
+cd /opt/lampp
+sudo ./manager-linux-x64.run
+sudo manager-linux-x64.run
+
+http://tutorialphp.net/
+
+ABRIR GESTOR XAMPP (SIMPLE): [no va en ubuntu]
+cd /opt/lampp/share
+sudo /opt/lampp/share/xampp-control-panel/xampp-control-panel
+
+Carpeta pública:	opt/lampp/htdocs
+			pot/lampp/apache2/htdocs
+
+Apagar apache2: cd /etc
+		sudo service apache2 stop (Luego se puede arrancar de xampp)
+
+phpmyadmind: http://localhost/phpmyadmin/
+ver los usuarios de la base de datos
+SELECT * FROM mysql.user;
+
+OTROS:
+Modificación de notificación de errores en PHP (Para hacerlo debemos ir a /opt/lampp/etc como sudo su para modificar el .ini)
+----------------------------------------------
+Abrimos el archivo de configuración de PHP (php.ini), pulsando sobre el botón Config del panel de control de XAMPP correspondiente al servidor Apache.
+Buscamos la siguiente línea en el archivo: 
+error_reporting=E_ALL & ~E_DEPRECATED & ~E_STRICT
+Reemplazamos la línea por la siguiente:
+error_reporting=E_ALL & ~E_NOTICE & ~E_DEPRECATED
+Paramos el servidor Apache.
+Volvemos a arrancar el servidor Apache.
+
+
+phpMyAdmin no permite el acceso sin contraseña a la base de datos, por lo que tendremos que cambiar una pequeña configuración para permitirlo.
+Dentro de la carpeta phpMyAdmin renombramos el archivo config.sample.inc.php por config.inc.php. (opt/lampp/phpmyadmind)
+El archivo config.inc.php sirve para indicar a la aplicación configuraciones adicionales. Lo abrimos.
+Cambiamos la línea:
+$cfg['Servers'][$i]['AllowNoPassword'] = false;
+por la siguiente:
+$cfg['Servers'][$i]['AllowNoPassword'] = true;
+En este momento podremos acceder a la base de datos con el usuario root y dejando la contraseña en blanco.
+
+
+mysql -h localhost -u root -p
+
+sudo ./opt/lampp/manager-linux-x64.run
+
+https://www.digitalocean.com/community/tutorials/como-instalar-en-ubuntu-18-04-la-pila-lamp-linux-apache-mysql-y-php-es
+https://www.digitalocean.com/community/tutorials/como-instalar-y-proteger-phpmyadmin-en-ubuntu-16-04-es
+
+
+Si estás utilizando una distribución basada en Debian / Ubuntu:
+
+Para iniciar el servicio –> /etc/init.d/mysql start
+Para detener el servicio –>/etc/init.d/mysql  stop
+Para reiniciar el servicio–> /etc/init.d/mysql restart
+
+ Detenemos apache
+
+user@user-desktop:~$ sudo /etc/init.d/apache2 stop
+
+
+Y luego iniciamos Xampp
+
+user@user-desktop:~$ sudo /opt/lampp/lampp start
+
+En el caso de que tengas una distribución basada en RedHat (Fedora Core/Cent OS):
+
+Para iniciar el servicio –>/etc/init.d/mysqld start
+Para detener el servicio –>/etc/init.d/mysqld stop
+Para reiniciar el servicio–>/etc/init.d/mysqld restart
+
+sudo service mysql stop
+sudo /opt/lampp/lampp restart 
+
+
+Las distribuciones basadas en RedHat permiten adicionalmente la ejecución del comando service, el cual se puede emplear para iniciar, parar y reiniciar el servicio:
+
+service mysql start
+service mysql stop
+service mysql restart
+
+apache
+sudo /opt/lampp/lampp start
+sudo /opt/lampp/lampp stop
+
+Cambiamos los permisos al instalador:
+chmod 755 xampp-linux-*-installer.run
+
+Correr el instalador:
+sudo ./xampp-linux-*-installer.run
+
+Desinstalar xampp:
+
+cd /opt/lampp
+./uninstall
+
+Iniciar los servicios:
+sudo /opt/lampp/lampp start
+
+Ordenes antiguas
+----------------
+Los comandos básicos son:
+apache -s
+apache -k start
+apache -k shutdown
+apache -k restart
+apahce –k install
+inicia el servidor
+inicia el servidor
+apaga el servidor
+reinicia el servidor
+instala el servidor como un servicio

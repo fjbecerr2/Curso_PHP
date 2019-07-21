@@ -1,0 +1,943 @@
+Enlaces:
+http://adelat.org/media/docum/nuke_publico/creando_mi_primera_pgina_php.html
+
+Manuales:
+Manual_PHP5_Basico.pdf	[Muy esquemático. Es casi un indice de funciones]
+
+Directorio publico: /opt/lampp/htdocs		[Necesita el usuario sudo para el acceso]
+Permisos de acceso: $sudo chmod -R 777 /opt/lampp/htdocs   (o no funcionaran los acceso a fichero etc)
+
+Modo de trabajo:
+Usar un directorio para codificar: /francisco/php/mycode/proyecto1
+Emiliar el código previo para estar seguros de actualización: rm -r /opt/lampp/htdocs/proyecto1
+Copiar las modificaciones en el directorio publico: sudo cp /francisco/php/mycode/proyecto1 /opt/lampp/htdocs/proyecto1
+Asignar permisos para lo que necesitemos: sudo chmod -R 777 /opt/lampp/htdocs
+
+=== MODULO 2 ===
+Recuperación y tratamiento del archivo enviado
+Una vez que el usuario ha enviado el archivo al servidor, utilizaremos un array especial de PHP 
+para recuperar el archivo y su información. Su sintaxis es la siguiente:
+
+$_FILES['nombre_campo']
+
+Este array es multidimensional y tiene varias componentes con información del archivo:
+
+$_FILES['nombre_campo']['name']		Nombre del archivo enviado.
+$_FILES['nombre_campo']['tmp_name']	Ruta temporal donde se ha almacenado el archivo.
+$_FILES['nombre_campo']['type']		Tipo MIME del archivo. Lo utilizaremos para identificar el tipo del archivo.
+$_FILES['nombre_campo']['size']		Tamaño en bytes del archivo.
+
+Ejemplo:
+--------
+Si hacemos un print_r de $_FILES tras el envío de un archivo, nos encontraremos una estructura como la siguiente:
+
+: print_r de $_FILES
+
+Array
+(
+    [archivo1] => Array
+        (
+            [name] => factura.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6851.tmp
+            [error] => 0
+            [size] => 4386
+        )
+)
+
+print_r($miarray);
+
+Por defecto, el archivo se sube a un directorio temporal, pero es muy frecuente que queramos guardar este archivo de forma permanente. Para ello utilizaremos la siguiente sintaxis:
+
+move_uploaded_file($_FILES['nombre_campo']['tmp_name'],ruta_destino);
+
+ruta_destino será la ruta donde se guardará el archivo. 
+Podemos utilizar tanto rutas relativas (partiendo del directorio en el que se encuentra el script de PHP) como absolutas. 
+
+Limitaciones en la subida de archivos
+-------------------------------------
+Podemos modificar los valores de estos parámetros desde nuestro php.ini.
+
+Directiva		Valor habitual	Descripción
+---------		--------------	-----------
+max_file_uploads	20		Número máximo de ficheros que se pueden subir de forma simultánea.
+upload_max_filesize	2M		Tamaño máximo de cada fichero subido.
+post_max_size		8M		Tamaño máximo del conjunto de datos enviados mediante POST.
+max_input_time		60		Tiempo máximo en segundos de envío de datos al servidor.
+
+Si necesitásemos guardar archivos de este tipo, siempre debemos hacerlo en una carpeta que no sea pública, ya que de lo contrario, el usuario podría lanzar la ejecución de cualquier programa (seguridad).
+
+Por lo tanto, las precauciones que siempre deberemos tomar a la hora de hacer una subida de archivos son:
+
+1 Validar todas las extensiones de los archivos subidos y permitir únicamente las que vayamos a tratar.
+EJEMPLO: Si el usuario va a subir una imagen, solo permitiremos archivos con extensión .jpg, .jpeg, .gif o .png
+
+2 Si vamos a alojar ficheros con todo tipo de extensiones, guardar los archivos en un directorio que no esté en la carpeta pública.
+EJEMPLO: Creamos una carpeta al lado de la carpeta pública (carpeta htdocs en XAMPP) llamado archivos y referenciamos las rutas de move_uploaded_file a dicha carpeta.
+
+: Referencia completa de funciones de manejo del sistema de ficheros -> http://php.net/manual/es/book.filesystem.php
+
+Operaciones con archivos
+------------------------
+Sólo podremos realizar operaciones de modificación o lectura sobre los elementos en los que tengamos permiso para realizar dichas operaciones.
+: Usuario que debe poseer los permisos
+El usuario que debe poseer los permisos necesarios, debe ser el usuario que ejecuta el servidor web.
+Si estás utilizando un servidor Apache en Linux, por defecto, este usuario será apache en la mayoría de distribuciones. 
+Si utilizas sistemas Windows o Mac, este usuario será el que ha arrancado el servidor. En el caso de que se inicie mediante un servicio del sistema, el usuario será la cuenta por defecto para servicios del sistema.
+
+Usaremos chmod para modificar los permisos: 
+				chmod('documento.pdf',0777);
+
+Comprobar si existe un archivo:
+				if (file_exists(ruta)) {
+				     // Acciones a realizar si el archivo existe.
+				}
+Leer un archivo:
+				<?php
+				     echo file_get_contents('texto.txt');
+				?>
+Leer desde otro servidor:
+				<?php
+				     $contenido = file_get_contents('https://www.google.es/robots.txt');
+				?>
+Crear o escribir un archivo:
+				<?php
+				     file_put_contents('texto.txt','Hola mundo');
+				?>
+Mover o renombrar un archivo:
+				rename('archivo.txt','documentos/info.csv');  // rename(ruta_actual,ruta_nueva);
+				//Con esta instrucción, hemos cambiado el nombre de archivo.txt a info.csv y lo hemos movido a la carpeta documentos.
+Eliminar un archivo:
+				unlink('archivo.txt');
+
+Operaciones con directorios
+---------------------------
+Comprobar si existe un directorio:
+				// La función file_exists puede utilizarse tanto para archivos como para carpetas:
+				<?php
+				     if (file_exists('documentos')) {
+				?>
+				Existe el directorio documentos.
+				<?php
+				     } else {
+				?>
+				No existe el directorio documentos.
+				<?php
+				     }
+				?>
+Recorrer los archivos de un directorio:
+	Función		Descripción
+	-------		-----------
+	is_dir(ruta)	Devuelve true si la ruta indicada pertenece a un directorio.
+	is_file(ruta)	Devuelve true si la ruta indicada pertenece a un archivo.
+	opendir(ruta)	Abrir un directorio			
+
+	También recuperará los directorios especiales . y .. que hacen referencia al directorio actual y al directorio superior respectivamente.
+	Suele ser habitual que antes de realizar el proceso que necesitemos realizar para cada elemento del directorio, comprobemos que el elemento actual 		no es ninguno de estos dos directorios.
+
+	EJEMPLO:
+	--------
+	while ($entrada = readdir($directorio )) {
+	     if (($entrada != '.') && ($entrada != '..')) {
+		  // Acciones a realizar para cada elemento del directorio
+	     }
+	}
+
+				<?php
+				     $directorio = opendir('ejemplo');
+				     while ($entrada = readdir($directorio )) {
+					  if (($entrada != '.') && ($entrada != '..')) {
+					       if (is_dir('ejemplo/' . $entrada)) {
+						    echo "Directorio: $entrada<br>";
+					       } else {
+						    echo "Archivo: $entrada<br>";
+					       }
+					  }
+				     }
+				?>
+Crear un directorio:
+				mkdir('informes');
+Mover o renombrar un directorio:
+				rename('informes','documentos/reportes'); // rename(ruta_actual,ruta_nueva);
+Eliminar un directorio:
+				rmdir('informes'); // rmdir(ruta);
+
+== MODULO 3 ==
+La directiva error_reporting especifica qué clase de errores debe registrar PHP. (PHP.INI)
+
+Existen una serie de valores que pueden indicarse a esta directiva para especificar los errores a registrar. Los mas comunes son:
+
+Valor		Significado
+-----		------------
+E_ALL		Todos los errores
+E_ERROR		Errores de tipo Fatal error
+E_WARNING	Advertencias de tipo Warning
+E_PARSE		Errores de tipo Parse error
+E_NOTICE	Advertencias de tipo Notice
+E_DEPRECATED	Advertencias de tipo Deprecated
+
+Para indicar los errores que queremos mostrar indicaremos los valores separados por ampersands (&).
+
+	error_reporting = E_ERROR & E_WARNING & E_PARSE
+
+La siguiente directiva hará que PHP registre los errores de tipo Fatal error, Warning y Parse error.
+También podemos especificar que un error no se mostrará utilizando una virgulilla (~) antes del valor indicado.
+
+	error_reporting = E_ALL & ~E_DEPRECATED
+
+La siguiente directiva hará que PHP registre todos los errores, excepto los de tipo Deprecated.
+Un valor habitual para entornos de producción sería:
+
+	error_reporting = E_ALL & ~E_NOTICE & ~E_DEPRECATED
+
+Sin embargo, en entornos de desarrollo es más frecuente utilizar un valor similar al siguiente:
+
+	error_reporting = E_ALL & ~E_NOTICE
+
+Logs_error:
+Las siguientes directivas, almacenan en el archivo phperrors.log todos los Fatal error y Warning que se produzcan durante la ejecución de nuestros scripts.
+
+error_reporting = E_ERROR & E_WARNING
+error_log = C:\phperrors.log
+log_errors = On
+
+Directivas de errores en tiempo de ejecución:
+También podemos establecer el valor de estas directivas en tiempo de ejecución, en nuestros propios scripts PHP, utilizando la función ini_set.
+
+EJEMPLO:
+
+ini_set('display_errors', 'On');
+
+TRY:
+----
+Los errores de tipo Warning, Notice o Deprecated seguirán siendo mostrados aunque se produzcan dentro de la estructura try.
+PHP 7:
+	try {
+	     // Bloque de código a testear
+	} catch (Throwable $t) {
+	     // Acciones a realizar si se produce un error
+	}
+
+PHP 5 o anterior:
+
+	try {
+	     // Bloque de código a testear
+	} catch (Exception $e) {
+	     // Acciones a realizar si se produce un error
+	}
+
+Posibilidades de catch:
+Instrucción	Valor obtenido
+-----------	--------------
+$t -> getMessage()	Obtiene la descripción del error capturado.
+$t -> getFile()		Obtiene la ruta del script en el que se ha producido el error capturado.
+$t -> getLine()		Obtiene la línea del script en el que se ha producido el error capturado.
+
+
+Capturar los errores que no finalizan la ejecución del script (Warning, Notice o Deprecated):
+Manejador de errores personalizado:
+	function manejador_errores($codigo,$mensaje,$archivo,$linea) {
+	     // Acciones a realizar cuando se produce un error Warning, Notice o Deprecated
+	}
+
+Una vez creada la función debemos indicar de que se encargará de tratar los errores con la siguiente instrucción:
+
+	set_error_handler('manejador_errores');
+
+Si, es posible especificar, en un parámetro adicional de set_error_handler, qué errores manejará nuestra función:
+	set_error_handler('mifunción',E_WARNING); // Captura los errores de tipo Warning
+	set_error_handler('mifunción',E_NOTICE); // Captura los errores de tipo Notice
+	set_error_handler('mifunción',E_DEPRECATED); // Captura los errores de tipo Deprecated
+
+Esta instrucción establece la función que indiquemos como manejador de errores. Cuando se produce un error, le envía los parametros $codigo, $mensaje, $archivo y $línea que representan el código del error, la descripción, la ruta del script y la línea donde se ha producido el error respectivamente.
+
+Todos los errores no fatales producidos después de la asignación del manejador de errores, no se mostrarán por pantalla. Si queremos deshabilitar nuestro manejador de errores y dejar que PHP siga tratando los errores no fatales como habitualmente, podemos hacerlo con la siguiente instrucción:
+
+	restore_error_handler();
+
+	Ejemplo:
+		<?php
+		     function manejador_errores($codigo,$mensaje,$archivo,$linea) {
+			  global $mensaje;
+			  $mensaje = 'El resultado es infinito';
+		     }
+		     set_error_handler('manejador_errores');
+		     $resultado = 48758 / ((int)$_GET['divisor']);
+		     restore_error_handler();
+		     if ($mensaje == '') {
+			  echo "El resultado es $resultado";
+		     }
+		     echo $mensaje;
+		?>
+
+
+
+array $_SERVER:
+$_SERVER[parámetro]
+
+parámetro es el nombre del parámetro del servidor que queremos obtener.
+A continuación tienes un ejemplo de los principales parámetros que puedes encontrar en $_SERVER:
+
+Parámetro	Descripción	Ejemplo de valor devuelto
+---------	-----------	-------------------------
+HTTP_HOST	Nombre del servidor	www.example.com
+HTTP_USER_AGENT	Cadena de texto que identifica al navegador del usuario.	Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36
+HTTP_REFERER	Página desde la cual se ha llamado a la URL actual al pulsar un enlace.	http://www.example.com/item.php
+HTTP_ACCEPT_LANGUAGE	Idiomas configurados en el navegador del usuario.	es-ES,es;q=0.8
+SERVER_SOFTWARE	Software utilizado para servir las páginas.	Apache/2.4.25 (Win32) OpenSSL/1.0.2j PHP/7.1.1
+SERVER_NAME	Nombre del servidor.	www.example.com
+SERVER_ADDR	Dirección IP del servidor.	74.125.128.94
+SERVER_PORT	Puerto por el cual se sirven las páginas desde el servidor.	80
+REMOTE_ADDR	Dirección IP del usuario.	79.148.106.54
+DOCUMENT_ROOT	Dirección absoluta de la carpeta pública del servidor.	C:/xampp/htdocs
+SCRIPT_FILENAME	Dirección absoluta del script que se está ejecutando.	C:/xampp/htdocs/index.php
+SERVER_PROTOCOL	Versión del protocolo HTTP	HTTP/1.1
+REQUEST_URI	URL relativa a la que se está llamando.	/
+PHP_SELF	Dirección relativa del script que se está ejecutando.	/index.php
+REQUEST_TIME	Timestamp de la solicitud.	1496843010
+
+	Ejemplo:
+		Tu dirección IP es <?php echo $_SERVER['REMOTE_ADDR']; ?>
+
+== MODULO 4 ==
+Sintaxis de una clase
+---------------------
+Como sucede con las funciones, en PHP podemos definir nuestras clases en cualquier lugar del código, ya sea antes, o después de su utilización. No obstante, suele ser habitual declararlas en un fichero .php aparte ya que, como hemos comentado, es frecuente que reutilicemos nuestras clases en otros desarrollos. De esta forma es muy sencillo importarla o exportarla e incluirla en nuestros códigos mediante un include.
+
+La sintaxis de una clase en PHP es la siguiente:
+
+	class nombre_clase {
+
+	     public $propiedad1;
+	     public $propiedad2;
+	     public $propiedad3;
+
+	     public function metodo1() {
+		  // Acciones del método 1
+	     }
+
+	     public function metodo2() {
+		  // Acciones del método 2
+	     }
+		
+	}
+
+	$objeto = new nombre_clase();
+	$objeto -> propiedad1;
+	$objeto -> metodo1();
+
+	Ejemplo:
+	--------
+	Tenemos el siguiente código en el archivo saludo.class.php que guardamos en la carpeta "librerias" dentro de la carpeta pública:
+		<?php
+
+		     class saludo {
+			  
+			  public function saludar($nombre) {
+			       echo 'Hola ' . $nombre;
+			  }
+
+		     }
+		?>
+
+	Por otra parte, tenemos este código en el archivo index.php ubicado en la carpeta pública:
+		<?php
+		     include('librerias/saludo.class.php');
+		     $objeto = new saludo();
+		     $objeto -> saludar('Pedro');
+		?>
+
+La pseudovariable $this:
+------------------------
+$this es una variable predefinida en todos las objetos de PHP que hace referencia al propio objeto. La utilizaremos para referenciar cualquier método o propiedad desde dentro de la clase.
+	$this -> propiedad1;
+
+	Ejemplo:
+	-------
+	Tenemos el siguiente código PHP:
+
+	<?php
+	     $empleado1 = new empleado();
+	     $empleado1 -> set_salario(1200);
+	     echo $empleado1 -> get_salario() . '<br>';
+	     $empleado1 -> set_salario(800);
+	     echo $empleado1 -> get_salario() . '<br>';
+
+	     class empleado {
+
+		  public $salario;
+
+		  public function set_salario($valor) {
+		       if ($this -> validar_aumento($valor)) {
+		            $this -> salario = $valor;
+		       }
+		  }
+
+		  public function get_salario() {
+		       return $this -> salario;
+		  }
+
+		  public function validar_aumento($valor) {
+		       if ($valor < 900) {
+		            return false;
+		       } else {
+		            return true;
+		       }
+		  }
+
+	     }
+	?>
+
+	Al llamarlo desde el navegador obtendremos el siguiente resultado:
+
+	1200
+	1200
+	
+	Ejemplo 2 [public y private]:
+	----------------------------
+	$mi_objeto = new mi_clase();
+	echo $mi_objeto -> variable_publica; // Correcto
+	echo $mi_objeto -> variable_privada; // Producirá un error
+	$mi_objeto -> metodo_publico(); // Correcto
+	$mi_objeto -> metodo_privado(); // Producirá un error
+
+	class mi_clase {
+
+	     private $variable_privada;
+	     public $variable_publica;
+
+	     private function metodo_privado() {
+		  echo $this -> variable_publica; // Correcto
+		  echo $this -> variable_privada; // Correcto
+	     }
+
+	     public function metodo_publico() {
+		  echo $this -> variable_publica; // Correcto
+		  echo $this -> variable_privada; // Correcto
+		  $this -> metodo_privado(); // Correcto
+	     }
+
+	}
+
+Uso de static:
+-------------
+Para crear una propiedad estática, utilizaremos la siguiente sintaxis:
+
+	public static $nombre_propiedad;
+
+
+Y para acceder a una propiedad estática, usaremos la siguiente sintaxis:
+
+	nombre_clase :: $nombre_propiedad;
+
+Observa que estamos utilizando el nombre de la clase y no uno de los objetos de la clase.
+Esto es así, porque la propiedad no se almacena en un único objeto, sino en la propia clase. De hecho, no es necesario que exista ningún objeto de la clase para establecer y recuperar el valor de una propiedad estática.
+Por este motivo, se utiliza el operador :: (dos puntos + dos puntos) en lugar del operador habitual ->.
+También podemos establecer la propiedad como private. En tal caso, sólo podríamos acceder a ella desde dentro de la clase.
+
+podemos crear métodos estáticos utilizando la siguiente sintaxis:
+
+	public static nombre_metodo() {
+	     // Acciones
+	}
+
+La finalidad de crear este tipo de métodos es no necesitar la creación de un objeto para acceder al mismo. Suele utilizarse cuando utilizamos una clase, más como repositorio de funciones, que como un objeto funcional en sí.
+Dentro de un método estático, no podemos utilizar $this, ya que dicho método no se ejecuta dentro de un objeto.
+Todas las propiedades y métodos a las que acceda un método estático, deben ser también estáticos.
+Para acceder a un método estático, usaremos la siguiente sintaxis:
+
+	nombre_clase :: nombre_metodo();
+
+	Ejemplo: (No creamos objeto para usar el método dinámico)
+	-------
+		mi_clase :: saludar('Juan');
+
+		class mi_clase {
+		    
+		    public static function saludar($nombre) {
+			echo "Hola $nombre";
+		    }
+
+		}
+
+Aunque lo más habitual es utilizar el nombre de la clase para utilizar propiedades o métodos estáticos, también podemos hacerlo desde cualquier objeto de esta clase:
+
+	$objeto1 = new mi_clase();
+	$objeto2 = new mi_clase();
+	$objeto1 :: $valor = 78;
+	echo $objeto2 :: $valor;
+
+	class mi_clase {
+	    
+	    public static $valor;
+
+	}
+
+El funcionamiento de una variable estática no cambia con esta sintaxis. Al asignar un valor a la variable desde un objeto, el valor de ésta variable cambiará en todos los objetos de la misma clase.
+
+También podemos usar la pseudovariable $this para acceder a una variable estática desde un método (no estático) del propio objeto:
+
+	$this :: $valor;
+
+CONTRUCTORES / DESTRUCTORES:
+----------------------------
+Sintaxis del constructor:
+
+	class nombre_clase {
+
+	     public function __construct() {
+		  // Acciones a realizar cuando se crea el objeto
+	     }
+
+	}
+
+Sintaxis del destructor: (define operaciones antes de fin objeto al final del script)
+	class nombre_clase {
+
+	     public function __destruct() {
+		  // Acciones a realizar cuando se destruye el objeto
+	     }
+
+	}
+
+Podemos forzar con unset(objeto); Lo que llamaría la destructor.
+
+HERENCIA
+--------
+Sintaxis:
+	class nombre_clase extends clase_padre {
+	     // Definición de los métodos y propiedades exclusivos de nombre_clase
+	}
+
+PUBLIC, PRIVATE, PROTECTED: [métodos o propiedades]
+--------------------------
+PUBLIC será accesible...
+
+	Desde un método de la propia clase.
+	Desde un método de la clase heredada.
+	Desde el código principal.
+
+PRIVATE será accesible...
+
+	Desde un método de la propia clase.
+Y no será accesible...
+
+	Desde un método de la clase heredada.
+	Desde el código principal.
+
+PROTECTED será accesible...
+
+	Desde un método de la propia clase.
+	Desde un método de la clase heredada.
+Y no será accesible...
+
+	Desde el código principal.
+
+SOBRESCRITURA DE MÉTODOS
+------------------------
+En PHP, tenemos la posibilidad de sobrescribir un método heredado, para indicar un nuevo funcionamiento adecuado para la subclase.
+No es necesario que un método sobrescrito, tenga el mismo número de parámetros que el método heredado.
+Su definición puede ser modificada y siempre se requerirán los parámetros indicados en el método sobrescrito.
+Los constructores y destructores de clase, funcionan como un método más en todos los aspectos.
+Es por ello que también pueden ser sobrescritos si es necesario.
+
+Acceso al método original de la clase padre desde la clase hija (que ha creado uno sinónimo):
+
+	parent :: nombre_metodo();
+
+CLASE ABSTRACTA:
+---------------
+Una clase abstracta es una clase desde la cual no se puede generar un objeto.
+Para indicar que una clase es abstracta, usaremos la siguiente sintaxis:
+
+	abstract class nombre_clase {
+	     // Definición de los métodos y propiedades de nombre_clase
+	}
+
+	Ejemplo:
+	--------
+	abstract class empleado {
+
+	     public $nombre;
+	     public $salario;
+	     public $dni;
+
+	}
+
+	class empleado_mantenimiento extends empleado {
+
+	     public $partes_trabajo;
+	     public $maquinas_asignadas;
+
+	}
+
+	class empleado_comercial extends empleado {
+
+	     public $clientes;
+	     public $agenda;
+
+	}
+
+Es posible que necesitemos especificar, que la subclase debe implementar un método concreto, sin el cual el objeto resultante podría no tener sentido.
+Cualquier clase que herede de la anterior, tiene la obligación de implementar el método abstracto indicado. De lo contrario, se producirá un Fatal error.
+Los métodos abstractos, solo pueden ser declarados en clases abstractas.
+Estas indicaciones se denominan métodos abstractos y tienen la siguiente sintaxis:
+
+
+	abstract class nombre_clase {
+
+	     abstract public function nombre_metodo();
+
+	}
+
+
+Un método final, es aquel que no puede ser sobrescrito en una clase que hereda de su clase. Tiene la finalidad contraria que un método abstracto: evitar que se implemente cierta funcionalidad, pero con el mismo objetivo: orientar al programador sobre cómo utilizar la clase.
+
+La sintaxis de un método final es la siguiente:
+
+	class nombre_clase {
+
+	     final public function nombre_metodo() {
+		  // Acciones del método
+	     }
+
+	}
+
+== MODULO 5 ==
+EXTENSIONES Y LIBRERIAS
+-----------------------
+EXTENSIONES
+-----------
+Módulos que se integran dentro del propio lenguaje de programación.
+Necesitan ser instaladas y configuradas dentro de PHP para funcionar y suelen utilizarse en casos en que la funcionalidad a añadir es casi un estándar.
+Las extensiones son módulos que pueden ser integrados de forma directa dentro de PHP.
+Contienen funcionalidades que estarán disponibles como si formasen parte del propio núcleo de PHP. Por lo general, suelen ser códigos muy testados y libres de bugs, especialmente si son extensiones oficiales.
+Al primer lugar al que debemos acudir es a la página oficial de PHP que, como sabemos, dispone de una documentación muy completa de las funcionalidades del lenguaje.
+	http://www.php.net/
+
+PECL (PHP Extension Community Library)
+Éste es el repositorio de extensiones de la comunidad de programadores de PHP. En él podrás encontrar gran cantidad de extensiones para realizar infinidad de procesos.
+	https://pecl.php.net/
+
+Una vez localizada la extensión que necesitamos, debemos comprobar si ya está instalada y si está activada.
+Para comprobar si una extensión ya está activa, utilizaremos la función phpinfo() para mostrar la configuración completa de PHP.
+Si la extensión está activada, tendremos un bloque dentro de phpinfo() que tendrá su nombre e indicará su configuración.
+
+Para comprobar si la extensión ya está instalada, debemos abrir nuestro archivo php.ini. En él buscaremos una línea similar a la siguiente:
+	extension=archivo_extension
+
+Las extensiones se almacenan en archivos. En Windows serán archivos DLL y en Linux archivos SO.
+Dentro del archivo php.ini existirá una línea similar a extension=archivo_extension por cada extensión activa. De esta forma PHP activa o desactiva extensiones.
+Es posible que encontremos esta línea con un punto y coma (;) delante:
+
+	;extension=archivo_extension
+
+El carácter punto y coma (;) simboliza un comentario en php.ini. Si una extensión ha sido instalada, pero no activada, aparecerá la línea comentada dentro de php.ini para que podamos activarla si es necesario.
+Si descomentamos la línea y reiniciamos el servidor web, nuestra extensión estará activa y podemos comenzar a utilizarla.
+	Ejemplo: Activar extensión soap
+		Observamos que no aparece dentro de phpinfo() por lo que abrimos nuestro php.ini y encontramos la siguiente línea:
+			;extension=php_soap.dll
+
+		Descomentamos la línea que queda de la siguiente forma:
+			extension=php_soap.dll
+
+		Reiniciamos el servidor Apache y nuestra extensión soap ya está disponible para su uso.
+
+Si no encontramos el archivo de la extensión dentro de nuestro php.ini, o al descomentarlo la extensión no aparece en phpinfo(), significa que la extensión no está instalada.
+Para poder utilizar la extensión debemos proceder a descargarla e instalarla.
+
+Carpeta de extensiones
+----------------------
+Es el lugar en el que se almacenan todos los archivos de extensiones.
+Si el archivo de la extensión que queremos activar se encuentra en esta carpeta, y tiene todos los recursos y programas que utiliza instalados, al añadir la línea de extensión correspondiente en php.ini y reiniciar el servidor web, la extensión se activará.
+Para conocer cuál es la carpeta de extensiones, debemos buscar en php.ini la directiva extension_dir.
+	Ejemplo:
+		Tenemos el archivo de extensión php_extension.dll
+		Al abrir php.ini encontramos la siguiente línea
+
+			extension_dir="C:\xampp\php\ext"
+
+		Si colocamos un archivo el archivo en C:\xampp\php\ext\php_extension.dll y escribimos en php.ini la línea:
+
+			extension=php_extension.dll
+
+		Al reiniciar nuestro servidor Apache, la extensión está activada.
+
+
+Extensiones en Windows:
+-----------------------
+Los archivos de extensiones de Windows, tienen extensión DLL.
+Lo más habitual es utilizar la librería de extensiones de la comunidad PECL para localizar y descargar dicho archivo.
+Veremos un listado de versiones de la extensión. Si la extensión está disponible para Windows, veremos que a su derecha aparece el logotipo de Windows con la palabra DLL.
+Si tras seguir estos pasos, la extensión no se activa, puede ser que la DLL necesite otras DLL, programas o recursos para funcionar correctamente.
+En tal caso debemos informarnos sobre qué requisitos necesita la extensión para funcionar y aplicarlos.
+
+Extensiones en Linux
+--------------------
+El comando pecl se encarga de instalar las extensiones contenidas en librería de la comunidad PHP. Para que este comando funcione correctamente necesitamos únicamente tres requisitos:
+	Tener PHP instalado en el servidor.
+	Tener PEAR instalado en el servidor. PEAR es un sistema de distribución de componentes de PHP en el que se basa el comando pecl.
+		Si no lo tienes instalado, puedes hacerlo con los comandos habituales de instalación de paquetes de tu distribución Linux.
+	Tener instalado un compilador de C. El más habitual para Linux es gcc.
+		Si no lo tienes instalado, puedes hacerlo con los comandos habituales de instalación de paquetes de tu distribución Linux
+
+
+El uso de este comando es treméndamente sencillo. Para realizar una instalación, sólo debemos ejecutar el siguiente comando:
+	
+	pecl install nombre_extension
+
+LIBRERIAS 
+---------
+Archivos con código PHP que anexamos a nuestros proyectos mediante un include.
+Es la forma más simple y generalizada de distribuir código ya que cualquier programador puede distribuir sus códigos de esta forma.
+Una librería, es un archivo php con el código necesario para realizar cierto proceso.
+Con el comando include, podemos añadir el código contenido en dicho archivo a nuestro proyecto y utilizarlo.
+Integrar una librería en nuestro proyecto, es mucho más sencillo que añadir una extensión, si esta no está instalada.
+
+Ventajas Librerias frente a Extensiones
+----------------------------------------
+Portabilidad: C
+omo el código de la librería va anexado a nuestro proyecto, no tenemos que preocuparnos de si nuestro servidor tiene instalado o no cierto componente.
+
+Facilidad de uso:
+En muchas ocasiones, tendremos que subir nuestros desarrollos a servidores de terceros, en los cuales no somos libres de instalar todo lo que queramos.
+Utilizar librerías nos asegura que nuestro código funcionará correctamente con independencia de los módulos instalados en el servidor.
+Instalar extensiones puede requerir ciertos conocimientos de administración del sistema operativo del servidor que es posible que todos los programadores no posean.
+No obstante, cualquier programador será capaz de utilizar una librería.
+
+Elemento:
+Crear una librería está al alcance de cualquier programador.
+No es necesario tener ningún conocimiento adicional para crearla, ya que utilizaremos la misma sintaxis que usaríamos para un desarrollo propio.
+Podemos subir nuestra librería a cualquier web para promocionarla y distribuirla por nuestra cuenta.
+
+Diversidad:
+Gracias a esta facilidad de creación, y a la amplia comunidad de desarrolladores en PHP, encontraremos una cantidad enorme de librerías.
+En comparación con las extensiones, la cantidad de de librerías nos asegura que encontremos el proceso que necesitemos, casi con seguridad.
+Cualquier problema que necesitemos resolver, sin duda ya se lo han encontrado otros programadores con anterioridad y, en muchos casos, habrán desarrollado librerías para solventarlo.
+
+Desventajas Librerias contra Extensiones:
+Fallos:
+Debido a que cualquier programador puede crear y publicar una librería sin mucho esfuerzo, puede que la calidad del código no sea la mejor.
+Si la fuente de la que hemos obtenido la librería no es muy confiable, podríamos encontrarnos con código ineficiente o incluso con errores de ejecución en el código.
+Por lo general, antes de utilizar una librería, debemos comprobar si la fuente de donde la obtenemos es de confianza y si hay otros programadores utilizándola satisfactoriamente.
+
+Mantenimiento:
+Si utilizamos una librería de la que nuestro código depende, podríamos encontrarnos con la desagradable sorpresa de que el autor de la misma ha dejado de mantenerla.
+Es posible que al intentar avanzar de versión en PHP o actualizar ciertas características, nos encontremos con que la librería se encuentra obsoleta y no hay actualizaciones.
+No hay una forma sencilla de prever esta situación, pero intentar librerías de fuentes que nos den cierta seguridad, puede ahorrarnos más de un problema en el futuro.
+
+Estandarizacion:
+Existe una cantidad enorme de librerías. Esto, que a priori es una ventaja, puede producir una situación en la que existen múltiples librerías distintas tratando de resolver el mismo problema.
+Cuando utilizamos extensiones, sobre todo si son oficiales, nuestro forma de resolver el problema es casi estándar. Pero al usar librerías, podemos encontrarnos con que en unos desarrollos se ha resuelto el problema con una librería y en otros con otra.
+Es importante verificar que la librería que hemos elegido es la mejor alternativa posible para resolver nuestras necesidades y que no existe otra mejor y más utilizada para ello.
+
+	Ejemplo: Añadir PHPMailer a nuestro proyecto
+	------
+		Integrar PHPMailer con nuestro proyecto PHP es muy sencillo, sólo debemos seguir los siguientes pasos:
+		Descomprimir el archivo ZIP descargado.
+	 	Copiar todos los archivos descargados a una carpeta dentro de la carpeta pública de nuestro servidor web.
+		Incluir en nuestro código mediante la instrucción include el archivo PHPMailerAutoload.php.
+		Crear un objeto de la clase PHPMailer.
+		Vamos a ver un ejemplo de cómo quedaría nuestro código después de realizar estos pasos:
+
+		<?php
+
+		     include('phpmailer/PHPMailerAutoload.php');
+		     $mail = new PHPMailer();
+
+		?>
+
+		: Configurar el servidor SMTP
+		Para configurar el servidor web ejecutaremos la siguientes instrucciones:
+
+		$mail -> isSMTP(); // Indica que vamos a utilizar el protocolo SMTP
+		$mail -> Host = 'smtp.gmail.com'; // Especificamos el servidor SMTP
+		$mail -> SMTPAuth = true; // Indicamos que nuestro servidor requiere autenticación
+		$mail -> Username = 'miusuario'; // Nombre de usuario
+		$mail -> Password = 'micontraseña'; // Contraseña
+		$mail -> SMTPSecure = 'tls'; // Tipo de seguridad de la conexión
+		$mail -> Port = 587; // Puerto de envío
+		$mail -> setFrom('correo@gmail.com','José'); // Dirección de correo y nombre
+
+		Estos datos deben ser suministrados por nuestro proveedor de correo.
+
+		Configurar el correo electrónico a enviar
+		Para configurar el correo electrónico a enviar:
+
+		$mail -> isHTML(true); // Especifica si el cuerpo del mensaje está en HTML
+		$mail -> CharSet = 'UTF-8'; // Indica la codificación de caracteres
+		$mail -> Subject = 'Asunto'; // Asunto del correo
+		$mail -> Body = 'Mensaje'; // Texto del correo
+		$mail -> addAddress('destinatario@gmail.com', 'Pedro'); // Añadir un destinatario
+
+		otros métodos para configurar el correo electrónico
+		Opcionalmente, podemos utilizar también los siguientes métodos:
+
+		$mail -> addReplyTo('info@gmail.com', 'Info'); // Dirección de respuesta
+		$mail->addCC('maria@gmail.com','María'); // Añadir destinatario de copia
+		$mail->addBCC('rosa@gmail.com','Rosa'); // Añadir destinatario de copia oculta
+		$mail->addAttachment('C:\imagen.jpg', 'foto.jpg'); // Añadir archivo adjunto
+
+		Código completo de envío con PHPMailer
+		<?php
+		     include('phpmailer/PHPMailerAutoload.php');
+		     $mail = new PHPMailer();
+		     $mail -> isSMTP();
+		     $mail -> Host = 'smtp.gmail.com';
+		     $mail -> SMTPAuth = true;
+		     $mail -> Username = 'cursophpadr@gmail.com';
+		     $mail -> Password = '123456789';
+		     $mail -> SMTPSecure = 'tls';
+		     $mail -> Port = 587;
+		     $mail -> setFrom('cursophpadr@gmail.com', 'José');
+		     $mail -> isHTML(true);
+		     $mail -> CharSet = 'UTF-8';
+		     $mail -> Subject = 'Notificación';
+		     $mail -> Body = 'Tienes una <b>Alerta</b>';
+		     $mail -> addAddress('domingo@gmail.com', 'Domingo');
+		     if (!$mail -> send()) {
+			  echo 'Error en el envío: ' . $mail -> ErrorInfo;
+		     } else {
+			  echo 'Correo enviado';
+		     }
+		?>
+
+== MODULO 6 ==
+Single Sign-On
+--------------
+Single Sign-On (SSO), es un procedimiento de autenticación, muy habitual en aplicaciones web. Su funcionamiento es muy sencillo de implementar a la vez que eficaz.
+La forma más sencilla de uso es la existencia de un enlace en el cual el usuario hace clic e inmediatamente aparece logeado en el proveedor de servicio.
+
+En todo procedimiento de autenticación entre varios sistemas siempre hay, al menos, dos actores:
+Proveedor de identidad:
+-----------------------
+Es el sistema encargado de proveer los datos del login. El usuario debe haberse identificado en este sistema para extender su identificación a otro sistema.
+	Acceso limitado:
+		No ofrecerá un acceso a su base de datos 
+		Toda la transmisión de información se realizará mediante parámetros a través de conexiones HTTP. De esta forma, 
+		Sólo se transfiere la información que el proveedor de identidad decida y se independiza el tipo de tecnología (lenguaje, servidor, base de 			datos...) que utilice cada aplicación.
+	Seguridad:
+		Identificar al proveedor de identidad de manera inequívoca para que no se produzca ningún tipo de suplantación de identidad. 
+		Establecer un mecanismo para asegurarnos de que los datos que nos han llegado, son los mismos que éste nos ha enviado.
+	Identificación comun:
+		Para poder relacionar un usuario en ambas aplicaciones, es necesario que ambos tengan un identificador común.
+		Esta es la única forma de saber que un usuario de un sistema, es el mismo que el de otro sistema.
+	
+El proveedor de identidad es el encargado de generar este enlace, que apuntará a una URL específica del proveedor de servicio y le enviará una serie de parámetros para que éste pueda identificar al usuario (Por ejemplo el ID de usuario).
+
+
+Proveedor de identidad: Crear el enlace
+---------------------------------------
+La misión del proveedor de identidad es generar el enlace para que el usuario pueda logearse en el proveedor de servicio con un solo clic.
+
+	ENDPOINT: es un punto de acceso que nos provee un sistema para comunicarnos y realizar acciones en él.
+	Es el punto final de una infraestructura a la que no podemos acceder, es decir, es el único punto de acceso visible de la misma.
+	En el caso de un SSO, el endpoint será la URL del script que ha desarrollado el proveedor de servicio para recibir la identificación.
+
+	PARAMETROS: Utilizaremos parámetros para enviar la información necesaria para identificar al usuario, al endpoint.
+	Lo más habitual es enviarlos mediante GET para poder construir una URL con ellos, también puede implementarse una llamada mediante POST.
+	La información a enviar debe ser una identificación del usuario. Un ejemplo de identificación válida puede ser un email o un ID.
+	En cualquier caso, ambos actores deben compartir esta misma identificación, y relacionarla con el usuario en cada uno de sus sistemas, por lo que 		deben ponerse de acuerdo previamente sobre la información enviada.
+	Aunque, a priori no es estrictamente necesario, pueden enviarse parámetros adicionales para añadir información extra.
+
+Proveedor de servicio:
+----------------------
+Es el sistema que recibe los datos del proveedor de identidad y da acceso a sus servicios con ellos.
+La misión del proveedor de servicio es generar el endpoint al cual debe llamar el enlace generado.
+El endpoint será un script de PHP que realice las operaciones necesarias para la comunicación:
+	Obtenemos el identificador de usuario que nos ha sido suministrado a través de un parámetro. 
+	El identificador, siempre debe estar relacionado en nuestra base de datos con el usuario.
+	Buscamos el usuario que corresponde con el identificador en nuestra base de datos.
+	Si no existiese, creamos un nuevo usuario en nuestra base de datos y lo asociamos con el identificador. 
+	Si para dar de alta un usuario, necesitemos información adicional, el proveedor de identidad, debe suministrarla con parámetros adicionales.
+	Logeamos al usuario en nuestro sistema.
+		Cuando creamos un nuevo usuario a través del SSO, el proveedor de identidad nunca debe proporcionarnos la contraseña como dato para crearlo.
+		Lo más habitual en estos casos es generar una contraseña aleatoria.
+		Nuestro usuario utilizará como método de identificación, el SSO. Aunque si nuestro sistema tiene un procedimiento para cambiar de 			contraseña, puede utilizarlo para establecer una nueva contraseña y logearse de forma directa.
+	Redirigimos a la página de bienvenida correspondiente.
+
+Securizando el SSO
+------------------
+Es totalmente necesario que añadamos ciertas restricciones de seguridad para limitar su uso y evitar accesos no autorizados. 
+	Firma de datos:
+	Verificar que los datos que llegan al endpoint, han sido suministrados exclusivamente por el proveedor de identidad, realizar un firmado de datos.
+
+		Clave privada:
+			Una clave privada es una cadena de texto que contiene una serie de caracteres.
+			El proveedor de identidad y el proveedor de servicio deberán conocer esta clave privada, pero nunca deben darla a conocer.
+			La clave privada nunca se enviará en una comunicación.
+			Nunca debe salir del servidor donde esté almacenada para que no pueda ser interceptada.	
+
+		Algoritmo de encriptación:
+			Para generar la firma, utilizaremos un algoritmo de encriptación de un solo sentido.
+			Esta clase de algoritmos generan un hash:
+				cadena de texto de longitud fija que se obtiene tras realizar una serie de procesos con la cadena de texto original.
+
+			La particularidad de estos algoritmos es que no es posible desencriptar sus resultados, lo que significa, que desde el hash no se 				puede obtener la cadena de texto original.
+			Algunos de los algoritmos de encriptación de un solo sentido más utilizados son:
+				MD5
+				SHA1
+				SHA256
+
+	Ejemplo:
+	--------
+		Firmar los datos de un enlace SSO
+		Tenemos el siguiente enlace y queremos firmar sus datos:
+
+		 http://www.ps.com/sso.php/?email=usuario@gmail.com
+
+		Para lo cual tenemos la siguiente clave privada:
+
+		PN98dS9dsnj789ds
+
+		Generamos la cadena de texto de la siguiente forma:
+
+		usuario@gmail.comPN98dS9dsnj789ds
+
+		La encriptaremos con el algoritmo SHA1 obteniendo el siguiente hash:
+
+		9527ffd2e93300bfe4a1299ebc7f6ded96d7db41
+
+		Añadiremos la firma al enlace que quedará de este modo:
+
+		http://www.ps.com/sso.php/?email=usuario@gmail.com&firma=9527ffd2e93300bfe4a1299ebc7f6ded96d7db41
+		 
+		El proveedor de servicio realizará este mismo proceso con la información suministrada y comprobará ambas firmas.
+
+
+Hacer que el enlace caduque
+---------------------------
+El enlace generado debe funcionar solo por un determinado periodo de tiempo. 
+Esta es una medida muy sencilla de implementar que nos previene ante un posible robo del enlace.
+Para establecer la caducidad del enlace realizaremos los siguientes pasos:
+	Enviaremos un parámetro adicional con el timestamp actual.
+	Firmaremos el timestamp junto con el resto de parámetros.
+	Desde el endpoint, verificamos que el timestamp no está caducado, es decir, que no ha pasado más de un determinado plazo desde que se generó.
+	Para que esta técnica funcione, ambos servidores deben tener su fecha y hora establecida correctamente para poder sincronizar sus comunicaciones.
+
+Otras opciones de implementación
+--------------------------------
+Cuando el proveedor de identidad y el proveedor de servicio son la misma aplicación
+-----------------------------------------------------------------------------------
+Hay situaciones en las que es muy interesante, Que el proveedor de identidad y el proveedor de servicio sean la misma aplicación.
+Suele ser utilizado sobre todo para generar un enlace que pueda ser enviado por email. De esta forma, el usuario aparecerá logeado inmediatamente en la página al pulsar el enlace.
+Si enviamos emails en las que instamos al usuario a realizar acciones, pulsando un enlace del mismo, para las cuales debe estar registrado, resultará imprescindible tener un SSO para nosotros mismos.
+Para implementar esta opción, solo debemos generar el endpoint y el enlace como si de un SSO normal se tratara.
+
+Generar un botón desde el proveedor de servicio para logearse con un proveedor de identidad.
+-------------------------------------------------------------------------------------------
+En este caso es el proveedor de servicio el que ofrece el login, en vez del proveedor de identidad, lo cual nos resultará útil para ofrecer varias opciones de ingreso.
+Una vez desarrollado el SSO habitual, implementar esta opción es muy sencillo:
+El proveedor de identidad desarrollará otro endpoint.
+Desde el proveedor de servicio, generamos un enlace que llame a este endpoint, sin necesidad de parámetros específicos.
+En este nuevo endpoint, el proveedor de identidad, generará el enlace hacia el endpoint del proveedor de servicio de la forma habitual.
+El endpoint del proveedor de identidad redirigirá al enlace, siguiente el proceso habitual del SSO.
+En muchas ocasiones habrás visto, que una página ofrece la opción de hacer un login en ella mediante otro servicio:
+
+Utilizar redes sociales y otros servicios populares como proveedor de identidad
+-------------------------------------------------------------------------------
+Las redes sociales y otros servicios relevantes de Internet, cuentan con millones de usuarios en sus sistemas. Esto hace que sean un proveedor de identidad ideal ya que, muchos de nuestros posibles usuarios, tendrán una cuenta en dichos servicios.
+Muchos de estos servicios nos ofrecen la posibilidad de ejercer como proveedores de identidad para nuestros SSO. Algunos de los más utilizados son: Facebook, Google, Twitter...
+Para utilizar uno de estos servicios como proveedor de identidad, debemos implementar la operativa que éstos nos indican. Habitualmente existe una página dedicada a desarrolladores en estos servicios donde nos indican instrucciones detalladas sobre la integración de nuestra aplicación con sus servicios.
+
+
