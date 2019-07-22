@@ -1,22 +1,8 @@
 <?php
 	include('funciones.php');
 		
-	$proveedorServicio = new miConexionSQL_ProveedorServicio;	
-	$proveedorServicio->Trazar('Pre login: '.$_POST['user'],false);
-	$proveedorServicio->Trazar('Pre login: '.$_SESSION['pi']['user'],false);
+	$proveedorServicio = new miConexionSQL_ProveedorServicio;		
 	
-	switch ($_POST['accion']) {
-	case 'login':
-		$proveedorServicio->Trazar('Login: '.$_POST['user'],false);
-		$_SESSION['pi']['user'] = $_POST['user'];
-		$_SESSION['pi']['pass'] = sha1($_POST['pass']);
-		break;
-	case 'logout':
-		unset($_SESSION['pi']['user']);
-		unset($_SESSION['pi']['pass']);
-		break;
-	}	
-		
 	switch ($_POST['accion']) {
 	case 'login':
 		$_SESSION['pi']['user'] = $_POST['user'];		

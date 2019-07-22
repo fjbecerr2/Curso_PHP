@@ -28,7 +28,6 @@
 	$proveedorIdentidad = new miConexionSQL_ProveedorIdentidad;
 	if ($proveedorIdentidad->login_correcto()) {
 		$ts = time();
-		//$firma = sha1($_SESSION['ps']['user'] . $ts . clave_privada);
 		$proveedorIdentidad->mensaje('Estás registrado correctamente', false);
 		$firma = sha1($_SESSION['ps']['user'].$ts.$proveedorIdentidad->CLAVEPRIVADA);
 ?>		
@@ -55,6 +54,7 @@
 </form>
 <?php
 }
+$proveedorIdentidad->CerrarConexionBBDD();
 ?>
 			</div>
 		</div>

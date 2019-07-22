@@ -1,32 +1,8 @@
 <?php
 	session_start();
-	/*$GLOBALS['conexion'] = mysqli_connect('localhost','root','','proveedoridentidad');
-	$GLOBALS['conexion'] -> query('SET NAMES utf8');
-
-	if ($mysqli->connect_errno) {
-		echo "Fallo al conectar a MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error . "<br><br>";
-	
-	}*/
-	
-	/*ESTO FUNCIONA
-	 * echo 'Comprobando si se puede conectar a BBDD<br><br>';
-
-	$mysqli = new mysqli('localhost','root','','proveedoridentidad');
-	if ($mysqli->connect_errno) {
-		echo "Fallo al conectar a MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error . "<br><br>";
-	}
-	echo $mysqli->host_info . "<br><br>";
-
-	$consulta = 'SELECT * FROM usuarios';
-	$resultado = $mysqli->query($consulta);
-	if ($resultado -> num_rows > 0) {
-			echo "SE HIZO EL SELECT <br><br>";
-	} */
-	
 	
 	class miConexionSQL_ProveedorIdentidad 
 	{		
-		//phpinfo();			
 		const CLAVEPRIVADA = 'SOLOPARASUSOJOS';
 		
 		const TRAZAR = false;
@@ -38,7 +14,6 @@
 					
 		//==
 		function __construct(){
-			//session_start(); //Deshabilita al usar la variable $_SESSION
 			$this->AbrirConexionBBDD();	
 		}	
 		

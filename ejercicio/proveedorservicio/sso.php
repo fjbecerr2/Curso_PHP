@@ -7,6 +7,7 @@
 	$ts = (int)$_GET['ts'];
 	$ts = $ts + (15*60);  // 15 minutos de margen
 	$proveedorServicio->Trazar('Validando firma',false);		
+
 	if ($firma != $_GET['firma']){ //Validando la firma
 		$proveedorServicio->CerrarConexionBBDD();
 	}

@@ -3,9 +3,8 @@
 	//sin compartir la sesión no funciona el ssoo
 	class miConexionSQL_ProveedorServicio
 	{
-
 		const CLAVEPRIVADA = 'SOLOPARASUSOJOS';		
-		const TRAZAR = True;
+		const TRAZAR = false;
 		
 		private $servername = 'localhost';
 		private $database = 'proveedorservicio'; 
@@ -16,8 +15,6 @@
 		
 		//==
 		function __construct(){
-			//session_start(); //Deshabilita al usar la variable $_SESSION
-			//phpinfo();
 			$this->AbrirConexionBBDD();	
 		}	
 		
@@ -131,7 +128,6 @@
 
 			$consulta = 'SELECT USER, PASS FROM usuarios WHERE user = \'' . addslashes($email) . '\'';
 			$resultado = $GLOBALS['conexion'] -> query($consulta);
-			//$resultado = mysqli_query($GLOBALS['conexion'], $consulta);
 
 			if ($resultado -> num_rows > 0) {
 				$usuarioencontrado=true;
@@ -198,8 +194,7 @@
 				echo '<font color= "green">'.$mensaje.'</font> <br> <br>';
 			}
 	}	
-	
-		
+			
 	public function Trazar($mensaje, $error){
 			$fecha = getdate();
 			$fechalog = $fecha['mday'].'/'.$fecha['mon'].'/'.$fecha['year'];
@@ -216,5 +211,4 @@
 
 
 }
-
 ?>
